@@ -13,13 +13,34 @@ def probabilityCalc(strs : list[list[str]]):  # strs contains list of word in a 
     
     unigrams = Counter(flatten_lists)        # dictionary to store the unigrams and their corresponding frequency of each word
         
-    print(unigrams)
+    bigrams = dict()
+
+    previousWord = None
+
+    for currentWord in flatten_lists:
+        if previousWord is not None and currentWord != '<s>':         
+            bigram = previousWord + ' ' + currentWord             # adding all possible two adjacent word combinations to the bigrams dictionary
+            if bigram in bigrams:
+                bigrams[bigram] += 1
+            else:
+                bigrams[bigram] = 1
+        previousWord = currentWord
+    
+    # print(bigrams)
+    # print(unigrams)
+
+    word = 'i love'
+    
+    probability = bigrams[word]/unigrams[word.split(' ')[0]]    # probability calculation for bigram model
+    return probability
 
   
-  
-s1 = "the quick brown fox jumped over the lazy dog"
-s2 = "waltz bad nymph for quick jigs vex"
+
+s1 = "i love utd"
+s2 = "i go to utd"
+s3 = 'i love apples'
 list1 = s1.split(' ')
 list2 = s2.split(' ')
-lists = [list1, list2]
-probabilityCalc(lists)
+list3 = s3.split(' ')
+lists = [list1, list2, list3]
+print(probabilityCalc(lists))
