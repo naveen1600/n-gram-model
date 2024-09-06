@@ -15,15 +15,8 @@ def probabilityCalc(strs : list[list[str]]):  # strs contains list of word in a 
         
     print(unigrams)
 
-
-    i = 0
-    j = 1
-
-    
-
-    
-
-
+  
+  
 s1 = "the quick brown fox jumped over the lazy dog"
 s2 = "waltz bad nymph for quick jigs vex"
 list1 = s1.split(' ')
