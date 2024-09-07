@@ -1,7 +1,12 @@
 from collections import Counter
 
+unigrams = {}
+bigrams = dict()
 
-def probabilityCalc(strs : list[list[str]]):  # strs contains list of word in a sentence
+def CorpusCount(strs : list[list[str]]):  # strs contains list of word in a sentence
+    global unigrams
+    global bigrams
+
     wrapped_lists = []
     
     for list in strs:
@@ -13,7 +18,7 @@ def probabilityCalc(strs : list[list[str]]):  # strs contains list of word in a 
     
     unigrams = Counter(flatten_lists)        # dictionary to store the unigrams and their corresponding frequency of each word
         
-    bigrams = dict()
+    
 
     previousWord = None
 
@@ -26,21 +31,19 @@ def probabilityCalc(strs : list[list[str]]):  # strs contains list of word in a 
                 bigrams[bigram] = 1
         previousWord = currentWord
     
-    # print(bigrams)
-    # print(unigrams)
-
-    word = 'i love'
-    
-    probability = bigrams[word]/unigrams[word.split(' ')[0]]    # probability calculation for bigram model
+  
+def probCalcUnsmootened(strs : str) -> int:
+    probability = bigrams[strs]/unigrams[strs.split(' ')[0]]    # probability calculation for unsmootened bigram model
     return probability
 
-  
+
 
 s1 = "i love utd"
 s2 = "i go to utd"
-s3 = 'i love apples'
+s3 = "i love apples"
 list1 = s1.split(' ')
 list2 = s2.split(' ')
 list3 = s3.split(' ')
 lists = [list1, list2, list3]
-print(probabilityCalc(lists))
+CorpusCount(lists)
+print(probCalcUnsmootened("i love"))
