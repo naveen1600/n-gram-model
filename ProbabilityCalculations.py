@@ -33,7 +33,17 @@ def CorpusCount(strs : list[list[str]]):  # strs contains list of word in a sent
     
   
 def probCalcUnsmootened(strs : str) -> int:
-    probability = bigrams[strs]/unigrams[strs.split(' ')[0]]    # probability calculation for unsmootened bigram model
+    n = 0
+    if strs in bigrams:
+        n = bigrams[strs]
+    probability = n/unigrams[strs.split(' ')[0]]    # probability calculation for unsmoothened bigram model
+    return probability
+
+def probCalcLaplaceSmoothing(strs : str) -> int:
+    n = 0
+    if strs in bigrams:
+        n = bigrams[strs]
+    probability = (n + 1)/(unigrams[strs.split(' ')[0]] + len(unigrams))    # probability calculation for smoothened bigram model
     return probability
 
 
@@ -46,4 +56,5 @@ list2 = s2.split(' ')
 list3 = s3.split(' ')
 lists = [list1, list2, list3]
 CorpusCount(lists)
-print(probCalcUnsmootened("i love"))
+print(probCalcUnsmootened("go love"))
+print(probCalcLaplaceSmoothing("go love"))
