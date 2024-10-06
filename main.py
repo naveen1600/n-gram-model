@@ -22,10 +22,10 @@ class UnigramModel:
 
         # return probability
         unigram_count = self.unigram_freq.get(word_list[0], 0)
+        V = len(self.unigram_freq.keys())
 
         # this is using smoothing formula (but if add_k is 0 then it will act as unsmoothed version)
-        # (Assuming Number of tokens words equal to number of words in vocabulary.)
-        p = (unigram_count + self.add_k) / (self.total_unigrams + self.add_k * self.total_unigrams)
+        p = (unigram_count + self.add_k) / (self.total_unigrams + self.add_k * V)
 
         return p
 
@@ -64,9 +64,10 @@ class BigramModel:
         # return probability
         bigram_count = self.bigram_freq.get(bigram, 0)
         unigram_count = self.unigram_model.unigram_freq.get(word_list[0], 0)
+        V = len(self.unigram_model.unigram_freq.keys())
 
         # this is using smoothing formula (but if add_k is 0 then it will act as unsmoothed version)
-        p = (bigram_count + self.add_k)/(unigram_count + self.add_k*self.total_bigrams)
+        p = (bigram_count + self.add_k)/(unigram_count + self.add_k*V)
 
         return p
 
@@ -138,33 +139,33 @@ test_unigram_freq, test_total_unigrams, test_bigram_freq, test_total_bigrams = C
 
 # compute perplexity for unsmoothed
 
-## TEST 1
-
+# # TEST 1
+#
 # print("PPL for unsmoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
 #                                                                   total_tokens=test_total_unigrams))))
-# Exception: Zero probability encountered! Apply unknown word handling
-
+# # Exception: Zero probability encountered! Apply unknown word handling
+#
 # print("PPL for unsmoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
-#                                                                   total_tokens=test_total_bigrams))))
-# Exception: Zero probability encountered! Apply unknown word handling
+#                                                                   total_tokens=test_total_unigrams))))
+# # Exception: Zero probability encountered! Apply unknown word handling
 
 
-## TEST 2
+# TEST 2
 
 # # adding add-1 smoothing
 # ugm.set_addk(1)
 # bgm.set_addk(1)
-
+#
 # print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
 #                                                                   total_tokens=test_total_unigrams))))
-# # PPL for unsmoothed Unigram model is 6.0379416270634
+# # PPL for unsmoothed Unigram model is 5.395399727832617
 #
 # print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
 #                                                                   total_tokens=test_total_bigrams))))
-# # PPL for unsmoothed Bigram model is 859.717391296099
+# # PPL for unsmoothed Bigram model is 164.39628977002462
 
 
-## TEST 3
+# TEST 3
 
 # adding add-k smoothing, k=0.000459
 k = 0.000459
@@ -173,11 +174,11 @@ bgm.set_addk(k)
 
 print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
                                                                   total_tokens=test_total_unigrams))))
-# PPL for (add-1) Smoothed Unigram model is 6.958143437683949
+# PPL for (add-1) Smoothed Unigram model is 6.957609208640156
 
 print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
                                                                   total_tokens=test_total_bigrams))))
-# PPL for (add-1) Smoothed Bigram model is 194.9256172992184
+# PPL for (add-1) Smoothed Bigram model is 126.32431475662796
 
 
 
