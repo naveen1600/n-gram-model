@@ -9,7 +9,7 @@ class UnigramModel:
         self.add_k = 0
         self.threshold = 0
 
-    def handle_unknown_words(self):
+    def _update_unigram_freq(self):
         # count all the words which occur only once
         self.unigram_freq["<UNK>"] = 0
 
@@ -25,7 +25,9 @@ class UnigramModel:
         for key in keyList:
             del self.unigram_freq[key]
 
-    def set_frequency_threshold(self, threshold):
+    def handle_unknown_words(self, threshold):
+        # those words with frequency less than threshold will be replaced by <UNK> tag
+
         if threshold < 0:
             raise Exception("Invalid Threshold! It has to be greater than or equal to 0.")
 
@@ -33,7 +35,7 @@ class UnigramModel:
 
         # update the frequency table to include <UNK>
         if self.threshold > 0:
-            self.handle_unknown_words()
+            self._update_unigram_freq()
 
     def set_addk(self, k):
         if 0 <= k <= 1:
@@ -210,7 +212,7 @@ test_unigram_freq, test_total_unigrams, test_bigram_freq, test_total_bigrams = C
 # # TEST 4
 #
 # # handle unknown words
-# ugm.set_frequency_threshold(threshold=1)
+# ugm.handle_unknown_words(threshold=1)
 # bgm.set_addk(k=0.000459)
 #
 # print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
@@ -225,7 +227,7 @@ test_unigram_freq, test_total_unigrams, test_bigram_freq, test_total_bigrams = C
 # TEST 5
 
 # handle unknown words
-ugm.set_frequency_threshold(threshold=2)
+ugm.handle_unknown_words(threshold=2)
 bgm.set_addk(k=0.000459)
 
 print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
