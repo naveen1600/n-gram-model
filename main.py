@@ -207,17 +207,31 @@ test_unigram_freq, test_total_unigrams, test_bigram_freq, test_total_bigrams = C
 #                                                                        total_tokens=test_total_bigrams))))
 # # PPL for (add-1) Smoothed Bigram model is 126.32431475662796
 
-# TEST 4
+# # TEST 4
+#
+# # handle unknown words
+# ugm.set_frequency_threshold(threshold=1)
+# bgm.set_addk(k=0.000459)
+#
+# print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
+#                                                                         total_tokens=test_total_unigrams))))
+# # # PPL for (add-1) Smoothed Unigram model is 3.67328689152463
+#
+# print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
+#                                                                        total_tokens=test_total_bigrams))))
+# # # PPL for (add-1) Smoothed Bigram model is 117.70706417953151
+
+
+# TEST 5
 
 # handle unknown words
-ugm.set_frequency_threshold(threshold=1)
+ugm.set_frequency_threshold(threshold=2)
 bgm.set_addk(k=0.000459)
 
 print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
                                                                         total_tokens=test_total_unigrams))))
-# # PPL for (add-1) Smoothed Unigram model is 3.67328689152463
+# # PPL for (add-1) Smoothed Unigram model is 3.3342323233576603
 
 print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
                                                                        total_tokens=test_total_bigrams))))
-# # PPL for (add-1) Smoothed Bigram model is 117.70706417953151
-
+# # PPL for (add-1) Smoothed Bigram model is 113.09829160338677
