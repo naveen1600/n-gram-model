@@ -7,35 +7,6 @@ class UnigramModel:
         self.unigram_freq = unigram_freq
         self.total_unigrams = total_unigrams
         self.add_k = 0
-        self.threshold = 0
-
-    def _update_unigram_freq(self):
-        # count all the words which occur only once
-        self.unigram_freq["<UNK>"] = 0
-
-        keyList = []
-
-        # delete all the keys with value = threshold
-        for key in self.unigram_freq:
-            if self.unigram_freq[key] <= self.threshold:
-                self.unigram_freq["<UNK>"] += 1
-                keyList.append(key)
-
-        # delete all the keys that are less or equal to threshold
-        for key in keyList:
-            del self.unigram_freq[key]
-
-    def handle_unknown_words(self, threshold):
-        # those words with frequency less than threshold will be replaced by <UNK> tag
-
-        if threshold < 0:
-            raise Exception("Invalid Threshold! It has to be greater than or equal to 0.")
-
-        self.threshold = threshold
-
-        # update the frequency table to include <UNK>
-        if self.threshold > 0:
-            self._update_unigram_freq()
 
     def set_addk(self, k):
         if 0 <= k <= 1:
@@ -50,7 +21,7 @@ class UnigramModel:
             raise Exception("Unigram probability needs one word exactly.")
 
         # return probability
-        unigram_count = self.unigram_freq.get(word_list[0], self.unigram_freq['<UNK>'] if self.threshold > 0 else 0)
+        unigram_count = self.unigram_freq.get(word_list[0], self.unigram_freq['<UNK>'])
         V = len(self.unigram_freq.keys())
 
         # this is using smoothing formula (but if add_k is 0 then it will act as unsmoothed version)
@@ -58,10 +29,10 @@ class UnigramModel:
 
         return p
 
-    def ppl(self, test_unigram_freq, total_tokens):
+    def ppl(self, test_tokens, total_tokens):
         log_prob_sum = 0
         # we are doing log calculations to avoid underflow of value
-        for unigram in test_unigram_freq:
+        for unigram in test_tokens:
             p = self.probability(unigram)
             if p > 0:
                 log_prob_sum += math.log(p)
@@ -90,6 +61,14 @@ class BigramModel:
         if len(word_list) != 2:
             raise Exception("Bigram probability needs two words exactly.")
 
+        # handle unknown
+        if word_list[0] not in self.unigram_model.unigram_freq:
+            word_list[0] = "<UNK>"
+        if word_list[1] not in self.unigram_model.unigram_freq:
+            word_list[1] = "<UNK>"
+
+        bigram = " ".join(word_list)
+
         # return probability
         bigram_count = self.bigram_freq.get(bigram, 0)
         unigram_count = self.unigram_model.unigram_freq.get(word_list[0], 0)
@@ -100,10 +79,10 @@ class BigramModel:
 
         return p
 
-    def ppl(self, test_bigram_freq, total_tokens):
+    def ppl(self, test_tokens, total_tokens):
         log_prob_sum = 0
         # we are doing log calculations to avoid underflow of value
-        for bigram in test_bigram_freq:
+        for bigram in test_tokens:
             p = self.probability(bigram)
             if p > 0:
                 log_prob_sum += math.log(p)
@@ -146,6 +125,26 @@ def CorpusCount(data):
     return unigrams, total_unigrams, bigrams, total_bigrams
 
 
+def generate_bigrams(data):
+    bigrams = []
+    total_bigrams = 0
+    previousWord = None
+    for currentWord in data:
+        if previousWord is not None and currentWord != '<s>':
+            bigram = previousWord + ' ' + currentWord
+            total_bigrams += 1
+            bigrams.append(bigram)
+        previousWord = currentWord
+    return bigrams, total_bigrams
+
+
+def handle_unknown_words(unigram_freq, threshold, tokenList):
+    for index, token in enumerate(tokenList):
+        if unigram_freq[token] <= threshold:
+            tokenList[index] = "<UNK>"
+    return tokenList
+
+
 # load training data
 dataset_path = "dataset/train.txt"
 train = processData(dataset_path)
@@ -164,34 +163,35 @@ test_path = "dataset/val.txt"
 test = processData(test_path)
 
 # generate test unigram and bigram freq
-test_unigram_freq, test_total_unigrams, test_bigram_freq, test_total_bigrams = CorpusCount(test)
+test_bigrams, test_total_bigrams = generate_bigrams(test)
+test_unigrams, test_total_unigrams = test, len(test)
 
 # compute perplexity for unsmoothed
-
+#
 # # TEST 1
 #
-# print("PPL for unsmoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
+# print("PPL for unsmoothed Unigram model is {}".format(str(ugm.ppl(test_tokens=test_unigrams,
 #                                                                   total_tokens=test_total_unigrams))))
 # # Exception: Zero probability encountered! Apply unknown word handling
 #
-# print("PPL for unsmoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
-#                                                                   total_tokens=test_total_unigrams))))
+# print("PPL for unsmoothed Bigram model is {}".format(str(bgm.ppl(test_tokens=test_bigrams,
+#                                                                   total_tokens=test_total_bigrams))))
 # # Exception: Zero probability encountered! Apply unknown word handling
 
 
-# TEST 2
-
+# # TEST 2
+#
 # # adding add-1 smoothing
 # ugm.set_addk(1)
 # bgm.set_addk(1)
 #
-# print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
+# print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_tokens=test_unigrams,
 #                                                                   total_tokens=test_total_unigrams))))
-# # PPL for unsmoothed Unigram model is 5.395399727832617
+# # PPL for unsmoothed Unigram model is 461.08291192772447
 #
-# print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
+# print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_tokens=test_bigrams,
 #                                                                   total_tokens=test_total_bigrams))))
-# # PPL for unsmoothed Bigram model is 164.39628977002462
+# # PPL for unsmoothed Bigram model is 1048.1314967506887
 
 
 # # TEST 3
@@ -201,39 +201,45 @@ test_unigram_freq, test_total_unigrams, test_bigram_freq, test_total_bigrams = C
 # ugm.set_addk(k)
 # bgm.set_addk(k)
 #
-# print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
+# print("PPL for (add-k) Smoothed Unigram model is {}".format(str(ugm.ppl(test_tokens=test_unigrams,
 #                                                                         total_tokens=test_total_unigrams))))
-# # PPL for (add-1) Smoothed Unigram model is 6.957609208640156
+# # PPL for (add-k) Smoothed Unigram model is 574.7083806922085
 #
-# print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
+# print("PPL for (add-k) Smoothed Bigram model is {}".format(str(bgm.ppl(test_tokens=test_bigrams,
 #                                                                        total_tokens=test_total_bigrams))))
-# # PPL for (add-1) Smoothed Bigram model is 126.32431475662796
+# # PPL for (add-k) Smoothed Bigram model is 376.25218792927654
 
 # # TEST 4
-#
+
 # # handle unknown words
-# ugm.handle_unknown_words(threshold=1)
-# bgm.set_addk(k=0.000459)
+# unk_train = handle_unknown_words(unigram_freq=unigram_freq, threshold=1, tokenList=train)
+# unigram_freq_unk, total_unigrams_unk, bigram_freq_unk, total_bigrams_unk = CorpusCount(unk_train)
+# ugm2 = UnigramModel(unigram_freq=unigram_freq_unk, total_unigrams=total_unigrams_unk)
+# bgm2 = BigramModel(bigram_freq=bigram_freq_unk, total_bigrams=total_bigrams_unk, unigram_model=ugm2)
 #
-# print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
-#                                                                         total_tokens=test_total_unigrams))))
-# # # PPL for (add-1) Smoothed Unigram model is 3.67328689152463
+# print("PPL for unknown word handled Unigram model is {}".format(str(ugm2.ppl(test_tokens=test_unigrams,
+#                                                                          total_tokens=test_total_unigrams))))
+# # PPL for unknown word handled Unigram model is 292.1907013179355
 #
-# print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
-#                                                                        total_tokens=test_total_bigrams))))
-# # # PPL for (add-1) Smoothed Bigram model is 117.70706417953151
+# print("PPL for unknown word handled Bigram model is {}".format(str(bgm2.ppl(test_tokens=test_bigrams,
+#                                                                         total_tokens=test_total_bigrams))))
+# # Exception: Zero probability encountered! Apply unknown word handling
 
 
 # TEST 5
 
 # handle unknown words
-ugm.handle_unknown_words(threshold=2)
-bgm.set_addk(k=0.000459)
+unk_train = handle_unknown_words(unigram_freq=unigram_freq, threshold=1, tokenList=train)
+unigram_freq_unk, total_unigrams_unk, bigram_freq_unk, total_bigrams_unk = CorpusCount(unk_train)
+ugm2 = UnigramModel(unigram_freq=unigram_freq_unk, total_unigrams=total_unigrams_unk)
+bgm2 = BigramModel(bigram_freq=bigram_freq_unk, total_bigrams=total_bigrams_unk, unigram_model=ugm2)
+bgm2.set_addk(k=0.000459)
 
-print("PPL for (add-1) Smoothed Unigram model is {}".format(str(ugm.ppl(test_unigram_freq=test_unigram_freq,
-                                                                        total_tokens=test_total_unigrams))))
-# # PPL for (add-1) Smoothed Unigram model is 3.3342323233576603
+print("PPL for (add-k) Smoothed Unigram model is {}".format(str(ugm2.ppl(test_tokens=test_unigrams,
+                                                                         total_tokens=test_total_unigrams))))
+# PPL for (add-k) Smoothed Unigram model is 292.1907013179355
 
-print("PPL for (add-1) Smoothed Bigram model is {}".format(str(bgm.ppl(test_bigram_freq=test_bigram_freq,
-                                                                       total_tokens=test_total_bigrams))))
-# # PPL for (add-1) Smoothed Bigram model is 113.09829160338677
+print("PPL for (add-k) Smoothed Bigram model is {}".format(str(bgm2.ppl(test_tokens=test_bigrams,
+                                                                        total_tokens=test_total_bigrams))))
+# PPL for (add-k) Smoothed Bigram model is 201.31185045640476
+
