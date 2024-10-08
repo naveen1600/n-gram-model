@@ -21,7 +21,7 @@ class UnigramModel:
             raise Exception("Unigram probability needs one word exactly.")
 
         # return probability
-        unigram_count = self.unigram_freq.get(word_list[0], self.unigram_freq['<UNK>'])
+        unigram_count = self.unigram_freq.get(word_list[0], self.unigram_freq.get('UNK', 0))
         V = len(self.unigram_freq.keys())
 
         # this is using smoothing formula (but if add_k is 0 then it will act as unsmoothed version)
