@@ -1,6 +1,6 @@
 import math
 from collections import Counter
-
+import matplotlib.pyplot as plt
 
 class UnigramModel:
     def __init__(self, unigram_freq, total_unigrams):
@@ -9,10 +9,7 @@ class UnigramModel:
         self.add_k = 0
 
     def set_addk(self, k):
-        if 0 <= k <= 1:
-            self.add_k = k
-        else:
-            raise Exception('Invalid k value. The value of k should be between 0 and 1.')
+        self.add_k = k
 
     def probability(self, unigram):
         # check if ngram is a single word or two word
@@ -21,7 +18,7 @@ class UnigramModel:
             raise Exception("Unigram probability needs one word exactly.")
 
         # return probability
-        unigram_count = self.unigram_freq.get(word_list[0], self.unigram_freq.get('UNK', 0))
+        unigram_count = self.unigram_freq.get(word_list[0], self.unigram_freq.get('<UNK>', 0))
         V = len(self.unigram_freq.keys())
 
         # this is using smoothing formula (but if add_k is 0 then it will act as unsmoothed version)
@@ -50,10 +47,7 @@ class BigramModel:
         self.add_k = 0
 
     def set_addk(self, k):
-        if 0 <= k <= 1:
-            self.add_k = k
-        else:
-            raise Exception('Invalid k value. The value of k should be between 0 and 1.')
+        self.add_k = k
 
     def probability(self, bigram):
         # check if ngram is a single word or two word
@@ -243,3 +237,93 @@ print("PPL for (add-k) Smoothed Bigram model is {}".format(str(bgm2.ppl(test_tok
                                                                         total_tokens=test_total_bigrams))))
 # PPL for (add-k) Smoothed Bigram model is 201.31185045640476
 
+# Evaluation, Analysis and Observation
+
+
+## Perplexity v/s k for Train Data
+# generate training unigram and bigram freq
+train_bigrams, train_total_bigrams = generate_bigrams(train)
+train_unigrams, train_total_unigrams = train, len(train)
+
+k_vals = [round(i * 0.01, 2) for i in range(1, 1001)]
+ugm_ppls = []
+bgm_ppls = []
+for k in k_vals:
+    ugm.set_addk(k)
+    bgm.set_addk(k)
+    ugm_ppl = ugm.ppl(test_tokens = train_unigrams, total_tokens = train_total_unigrams)
+    bgm_ppl = bgm.ppl(test_tokens = train_bigrams, total_tokens = train_total_bigrams)
+    ugm_ppls.append(ugm_ppl)
+    bgm_ppls.append(bgm_ppl)
+
+# Create the plot
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+# Plot both curves on the same axis
+color1 = 'tab:blue'
+color2 = 'tab:orange'
+ax1.set_xlabel('k Value')
+ax1.set_ylabel('Perplexity')
+line1, = ax1.plot(k_vals, ugm_ppls, color=color1, label='Train Unigram Perplexity')
+line2, = ax1.plot(k_vals, bgm_ppls, color=color2, label='Train Bigram Perplexity')
+
+# Set the y-axis limits to accommodate both datasets
+y_min = min(min(ugm_ppls), min(bgm_ppls))
+y_max = max(max(ugm_ppls), max(bgm_ppls))
+ax1.set_ylim(y_min, y_max)
+
+# Add a title
+plt.title('k Value v/s Train Unigram and Bigram Perplexity')
+
+# Add a legend
+ax1.legend(loc='upper left')
+
+# Add a grid for better readability
+ax1.grid(True, linestyle='--', alpha=0.7)
+
+# Adjust the layout and display the plot
+fig.tight_layout()
+print("here")
+plt.show()
+print("here2")
+
+## Perplexity v/s k for Test Data
+k_vals = [round(i * 0.01, 2) for i in range(1, 1001)]
+ugm_ppls = []
+bgm_ppls = []
+for k in k_vals:
+    ugm.set_addk(k)
+    bgm.set_addk(k)
+    ugm_ppl = ugm.ppl(test_tokens = test_unigrams, total_tokens = test_total_unigrams)
+    bgm_ppl = bgm.ppl(test_tokens = test_bigrams, total_tokens = test_total_bigrams)
+    ugm_ppls.append(ugm_ppl)
+    bgm_ppls.append(bgm_ppl)
+
+# Create the plot
+fig2, ax2 = plt.subplots(figsize=(10, 6))
+
+# Plot both curves on the same axis
+color1 = 'tab:blue'
+color2 = 'tab:orange'
+ax2.set_xlabel('k Value')
+ax2.set_ylabel('Perplexity')
+line1, = ax2.plot(k_vals, ugm_ppls, color=color1, label='Test Unigram Perplexity')
+line2, = ax2.plot(k_vals, bgm_ppls, color=color2, label='Test Bigram Perplexity')
+
+# Set the y-axis limits to accommodate both datasets
+y_min = min(min(ugm_ppls), min(bgm_ppls))
+y_max = max(max(ugm_ppls), max(bgm_ppls))
+ax2.set_ylim(y_min, y_max)
+
+# Add a title
+plt.title('k Value v/s Test Unigram and Bigram Perplexity')
+
+# Add a legend
+ax2.legend(loc='upper left')
+
+# Add a grid for better readability
+ax2.grid(True, linestyle='--', alpha=0.7)
+
+# Adjust the layout and display the plot
+fig2.tight_layout()
+plt.show()
